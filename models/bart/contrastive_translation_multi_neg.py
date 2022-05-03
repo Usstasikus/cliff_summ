@@ -92,7 +92,7 @@ def load_langpair_dataset(
     shuffle=True,
     pad_to_multiple=1,
     pos_data=None, neg_data=None,
-    max_neg_samples=5
+    max_neg_samples=5,
 ):
     def split_exists(split, src, tgt, lang, data_path):
         filename = os.path.join(data_path, "{}.{}-{}.{}".format(split, src, tgt, lang))
@@ -117,6 +117,7 @@ def load_langpair_dataset(
                     "Dataset not found: {} ({})".format(split, data_path)
                 )
 
+        old = False
         src_dataset = data_utils.load_indexed_dataset(
             prefix + src, src_dict, dataset_impl
         )
@@ -250,10 +251,10 @@ class ContrastiveTranslationMultiNegTask(LegacyFairseqTask):
                             help='pad the source on the left')
         parser.add_argument('--left-pad-target', default='False', type=str, metavar='BOOL',
                             help='pad the target on the left')
-        parser.add_argument('--max-source-positions', default=1024, type=int, metavar='N',
-                            help='max number of tokens in the source sequence')
-        parser.add_argument('--max-target-positions', default=1024, type=int, metavar='N',
-                            help='max number of tokens in the target sequence')
+        # parser.add_argument('--max-source-positions', default=1024, type=int, metavar='N',
+        #                     help='max number of tokens in the source sequence')
+        # parser.add_argument('--max-target-positions', default=1024, type=int, metavar='N',
+        #                     help='max number of tokens in the target sequence')
         parser.add_argument('--upsample-primary', default=1, type=int,
                             help='amount to upsample primary dataset')
         parser.add_argument('--truncate-source', action='store_true', default=False,
@@ -374,6 +375,7 @@ class ContrastiveTranslationMultiNegTask(LegacyFairseqTask):
         )
 
     def build_dataset_for_inference(self, src_tokens, src_lengths, constraints=None):
+        print("\n\n\n ENTERED build_dataset_for_inference \n\n\n")
         return LanguagePairDataset(
             src_tokens,
             src_lengths,
