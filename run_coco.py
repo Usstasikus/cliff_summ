@@ -6,6 +6,7 @@ from fairseq.models.bart import BARTModel
 from fairseq.models.bart.hub_interface import BARTHubInterface
 from fairseq import hub_utils, tasks, utils
 import spacy
+from tqdm import tqdm
 
 class dotdict(dict):
     """dot.notation access to dictionary attributes"""
@@ -38,7 +39,7 @@ def from_pretrained(
 def init_vocab():
 
     vocab = dict()
-    with open('/home/svdon/code/factual_coco/vocab_aligned') as f:
+    with open('/external1/svdon/coursepaper/code/factual_coco/vocab_aligned') as f:
         for line in f:
             try:
                 index, _, word = line[:-1].split('\t')
@@ -123,7 +124,7 @@ def get_coco_score(summ_model, source_doc, masked_doc, generated_summ, masked_to
     mask_score = np.exp(mask_score)
 
     # decode and merget sub-words (since BART adopts the BPE tokenizer)
-    tokenized_summ = [vocab[token] for token in tokenized_summ[0].numpy()]
+    tokenized_summ = [vocab[token] for token in tokenized_summ[0].numpy() if token in vocab]
     merge_tokens, summ_score, mask_score = merge_subwords(tokenized_summ, summ_score, mask_score)
 
     scores = [summ_score[idx]-mask_score[idx] for idx in range(len(merge_tokens)) if merge_tokens[idx] in masked_token_list]
@@ -195,31 +196,32 @@ if __name__ == '__main__':
     parser.add_argument('--bin_dir', type=str, default='bin_dir', help='path to bin_dir')
     parser.add_argument('--output_file', type=str, default='coco_score.txt', help='output file for saving the results')
     parser.add_argument('--mask', type=str, default='token', help='mask strategy (token/span/sent/doc)')
-    parser.add_argument('--user_dir', type=str, default="/home/svdon/code/cliff_summ/models/bart", help='mask strategy (token/span/sent/doc)')
+
+    parser.add_argument('--user_dir', type=str, default="/external1/svdon/coursepaper/code/cliff_summ/models/bart", help='mask strategy (token/span/sent/doc)')
     args = parser.parse_args()
 
-    task_args = dotdict({'task': 'translation',
-     'data': "/home/svdon/data/cliff/data/xsum_binarized",
-     'source_lang': None,
-     'target_lang': None,
-     'load_alignments': False,
-     'left_pad_source': True,
-     'left_pad_target': False,
-     'max_source_positions': 1024,
-     'max_target_positions': 1024,
-     'upsample_primary': -1,
-     'truncate_source': True,
-     'num_batch_buckets': 0,
-     'train_subset': 'train',
-     'dataset_impl': None,
-     'required_seq_len_multiple': 1,
-     'eval_bleu': False,
-     'eval_bleu_args': '{}',
-     'eval_bleu_detok': 'space',
-     'eval_bleu_detok_args': '{}',
-     'eval_tokenized_bleu': False,
-     'eval_bleu_remove_bpe': None,
-     'eval_bleu_print_samples': False})
+    task_args = dotdict({'task': 'denoising',
+                         'data': "/external1/svdon/coursepaper/coursepaper_dataset/cliff/data/xsum_binarized",
+                         'source_lang': None,
+                         'target_lang': None,
+                         'load_alignments': False,
+                         'left_pad_source': True,
+                         'left_pad_target': False,
+                         'max_source_positions': 1024,
+                         'max_target_positions': 1024,
+                         'upsample_primary': -1,
+                         'truncate_source': True,
+                         'num_batch_buckets': 0,
+                         'train_subset': 'train',
+                         'dataset_impl': None,
+                         'required_seq_len_multiple': 1,
+                         'eval_bleu': False,
+                         'eval_bleu_args': '{}',
+                         'eval_bleu_detok': 'space',
+                         'eval_bleu_detok_args': '{}',
+                         'eval_tokenized_bleu': False,
+                         'eval_bleu_remove_bpe': None,
+                         'eval_bleu_print_samples': False})
 
     ## load the scoring model
     utils.import_user_module(args)
@@ -279,16 +281,17 @@ if __name__ == '__main__':
     # calculate the coco scores
     coco_scores = []
     count = 0
+    num_lines = sum(1 for line in open(args.source_path))
     with open(args.source_path) as source_file, open(args.summaries_path) as summ_file:
-        for source_doc, generated_summ in zip(source_file, summ_file):
+        for source_doc, generated_summ in tqdm(zip(source_file, summ_file), total=num_lines):
             #read file
             source_doc = source_doc.strip()
             generated_summ = generated_summ.strip()
 
             #counter
             count += 1
-            if count % 100 == 0:
-                print('Working! {:d} summaries have been finished ...'.format(count))
+            # if count % 100 == 0:
+            #     print('Working! {:d} summaries have been finished ...'.format(count))
 
             ## get the masked tokens list, and generate the masked document
             summ_tokens, summ_tags = tokenizer.tokenize_and_pos(generated_summ)
@@ -296,7 +299,10 @@ if __name__ == '__main__':
             masked_doc = mask(source_doc, masked_token_list, tokenizer, mask_strategy=mask_strategy)
 
             # get the coco score
-            coco_score = get_coco_score(summ_model, source_doc, masked_doc, generated_summ, masked_token_list)
+            try:
+                coco_score = get_coco_score(summ_model, source_doc, masked_doc, generated_summ, masked_token_list)
+            except Exception:
+                continue
             coco_scores.append(coco_score)
 
     # write out the results
