@@ -39,7 +39,7 @@ def from_pretrained(
 def init_vocab():
 
     vocab = dict()
-    with open('/home/svdon/code/factual_coco/vocab_aligned') as f:
+    with open('/external1/svdon/coursepaper/code/factual_coco/vocab_aligned') as f:
         for line in f:
             try:
                 index, _, word = line[:-1].split('\t')
@@ -196,11 +196,11 @@ if __name__ == '__main__':
     parser.add_argument('--bin_dir', type=str, default='bin_dir', help='path to bin_dir')
     parser.add_argument('--output_file', type=str, default='coco_score.txt', help='output file for saving the results')
     parser.add_argument('--mask', type=str, default='token', help='mask strategy (token/span/sent/doc)')
-    parser.add_argument('--user_dir', type=str, default="/home/svdon/code/cliff_summ/models/bart", help='mask strategy (token/span/sent/doc)')
+    parser.add_argument('--user_dir', type=str, default="/external1/svdon/coursepaper/code/cliff_summ/models/bart", help='mask strategy (token/span/sent/doc)')
     args = parser.parse_args()
 
     task_args = dotdict({'task': 'denoising',
-                         'data': "/home/svdon/data/cliff/data/xsum_binarized",
+                         'data': "/external1/svdon/coursepaper/coursepaper_dataset/cliff/data/xsum_binarized",
                          'source_lang': None,
                          'target_lang': None,
                          'load_alignments': False,
