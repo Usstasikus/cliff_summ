@@ -1,4 +1,4 @@
-TOTAL_NUM_UPDATES=15000
+TOTAL_NUM_UPDATES=14000
 WARMUP_UPDATES=500
 LR=3e-05
 MAX_TOKENS=1024
@@ -8,9 +8,11 @@ SAVE_PATH=$2
 POS_DIR=$DATA/xsum_synthetic/positive_bt_filter
 DATA_DIR=$DATA/xsum_binarized
 USER_DIR=../../models/bart
+WANDB_PROJECT=cliff
 
 
 fairseq-train $DATA_DIR --pos-data $POS_DIR --neg-data $NEG_DIR \
+    --wandb-project $WANDB_PROJECT \
     --restore-file $BART_PATH --save-dir $SAVE_PATH \
     --max-tokens $MAX_TOKENS \
     --task contrastive_translation_multi_neg --mlp 1024 \
@@ -30,7 +32,7 @@ fairseq-train $DATA_DIR --pos-data $POS_DIR --neg-data $NEG_DIR \
     --clip-norm 0.1 \
     --lr-scheduler polynomial_decay --lr $LR --total-num-update $TOTAL_NUM_UPDATES --warmup-updates $WARMUP_UPDATES \
     --fp16 --update-freq $UPDATE_FREQ \
-    --skip-invalid-size-inputs-valid-test --max-epoch 5 \
+    --skip-invalid-size-inputs-valid-test --max-epoch 2 \
     --no-save-optimizer-state --no-epoch-checkpoints \
     --find-unused-parameters \
     --user-dir $USER_DIR;

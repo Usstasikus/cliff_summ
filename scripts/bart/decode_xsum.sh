@@ -17,3 +17,5 @@ fairseq-generate $DATA_PATH \
     --truncate-source --user-dir $USER_DIR;
 
 python convert_bart.py --generate-dir $RESULT_PATH
+
+#export DATA=/home/svdon/data/cliff/data && bash -e ./decode_xsum.sh /home/svdon/data/cliff/trained_models/mask_ent_maskrel_regenrel_regenent_swapent_syslowcon_2/checkpoint_best.pt /home/svdon/data/bart_predicts/xsum/cliff_xsum/
